@@ -29,7 +29,8 @@ anti-ai-slop-text/                # the Claude skill (upload this folder)
 └── scripts/
     └── scan_text.py              # heuristic scanner, Python 3, no dependencies
 examples/
-└── sample-slop.txt               # deliberately bad text to try the scanner on
+├── sample-slop.txt               # deliberately bad text to try the scanner on
+└── tesla-slop.txt                # one paragraph of typical slop about Nikola Tesla
 ```
 
 ## Run the web scanner
