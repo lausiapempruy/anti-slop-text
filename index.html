@@ -1,0 +1,653 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Anti-Slop Text</title>
+<meta name="description" content="Paste a draft and see which phrases, templates and leftovers say little. Runs in your browser. Indonesian and English.">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231d1a16'/%3E%3Crect x='9' y='17' width='46' height='14' rx='3' fill='%23f2c94c'/%3E%3Cpath d='M12 45h40M12 54h24' stroke='%23faf7f0' stroke-width='5' stroke-linecap='round'/%3E%3Cpath d='M8 36c10-9 20 4 32-5s10-3 16-9' stroke='%23e0533a' stroke-width='4.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<style>
+:root {
+  --bg: #f1ece0;
+  --paper: #fbf8f1;
+  --ink: #1d1a16;
+  --muted: #6a6356;
+  --rule: #d6ceba;
+  --accent: #b8321d;
+  --focus: #1b5fb4;
+  --m-phrase: #f6dc7a;
+  --m-contrast: #f4bcb0;
+  --m-ph: #b9d3f0;
+  --m-conn: #d9d0ba;
+  --m-close: #c0e0c2;
+  --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14120e;
+    --paper: #1c1913;
+    --ink: #ece6d6;
+    --muted: #a59d8b;
+    --rule: #3a3428;
+    --accent: #ef7e65;
+    --focus: #7db4f5;
+    --m-phrase: #6b5912;
+    --m-contrast: #6f3527;
+    --m-ph: #284866;
+    --m-conn: #433d2e;
+    --m-close: #2d5232;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: 16px;
+  line-height: 1.5;
+}
+.skip {
+  position: absolute;
+  left: -999px;
+  top: 8px;
+  background: var(--ink);
+  color: var(--paper);
+  padding: 8px 12px;
+  border-radius: 6px;
+  z-index: 10;
+}
+.skip:focus { left: 8px; }
+.wrap { max-width: 1120px; margin: 0 auto; padding: 0 16px; }
+.top {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 28px 0 18px;
+}
+h1 {
+  margin: 0 0 6px;
+  font-family: var(--serif);
+  font-size: clamp(1.7rem, 4vw, 2.3rem);
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+}
+.sub { margin: 0; max-width: 62ch; color: var(--muted); }
+.lang { display: flex; flex: none; border: 1px solid var(--rule); border-radius: 10px; overflow: hidden; }
+.lang button {
+  min-width: 44px;
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--muted);
+  font: 600 0.85rem var(--sans);
+  cursor: pointer;
+}
+.lang button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
+button:focus-visible, textarea:focus-visible, a:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+}
+.work { display: grid; gap: 16px; grid-template-columns: 1fr; }
+@media (min-width: 880px) { .work { grid-template-columns: 1fr 1fr; } }
+.pane {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: 14px;
+  min-width: 0;
+}
+.pane-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.pane-head label, .pane-head h2 {
+  margin: 0;
+  font: 700 0.78rem var(--sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn {
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  background: var(--paper);
+  color: var(--ink);
+  font: 600 0.9rem var(--sans);
+  cursor: pointer;
+}
+.btn:hover { border-color: var(--muted); }
+.btn.main { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+.doc {
+  font-family: var(--serif);
+  font-size: 1.05rem;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  min-height: 340px;
+}
+textarea.doc {
+  width: 100%;
+  display: block;
+  padding: 12px;
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--ink);
+  resize: vertical;
+}
+div.doc { padding: 12px; border: 1px solid transparent; }
+.hint { margin: 0; color: var(--muted); font-family: var(--sans); font-size: 0.95rem; white-space: normal; }
+.mk { color: inherit; border-radius: 3px; padding: 0 1px; }
+.k-phrase { background: var(--m-phrase); }
+.k-contrast { background: var(--m-contrast); text-decoration: underline wavy var(--accent); text-underline-offset: 3px; }
+.k-ph { background: var(--m-ph); outline: 1px dashed var(--muted); outline-offset: 1px; }
+.k-conn { background: var(--m-conn); text-decoration: underline dotted var(--muted); text-underline-offset: 3px; }
+.k-close { background: var(--m-close); text-decoration: underline double var(--muted); text-underline-offset: 3px; }
+.legend {
+  list-style: none;
+  margin: 12px 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+.legend .mk { font-family: var(--sans); color: var(--ink); padding: 1px 6px; }
+.results { margin-top: 16px; display: grid; gap: 16px; }
+.card {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: 16px;
+}
+.card h2 {
+  margin: 0 0 12px;
+  font: 700 0.78rem var(--sans);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.stats {
+  margin: 0;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+}
+.stat { border-left: 3px solid var(--rule); padding: 2px 0 2px 10px; }
+.stat dt { font-size: 0.8rem; color: var(--muted); }
+.stat dd { margin: 0; font: 600 1.35rem var(--mono); }
+.signals { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.signals li { border-left: 3px solid var(--accent); padding: 2px 0 2px 12px; }
+.found { display: grid; gap: 18px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.found h3 { margin: 0 0 8px; font-size: 0.95rem; }
+.found ul { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 6px; }
+.found li {
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  padding: 3px 8px;
+  border: 1px solid var(--rule);
+  border-radius: 6px;
+  overflow-wrap: anywhere;
+}
+.found li b { color: var(--accent); margin-left: 6px; }
+.none { margin: 0; color: var(--muted); font-size: 0.9rem; }
+.reminder { margin: 0; color: var(--muted); font-size: 0.85rem; }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+footer { padding: 28px 0 40px; color: var(--muted); font-size: 0.88rem; }
+footer a { color: var(--ink); }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<a class="skip" href="#draft" data-i18n="skip">Skip to draft</a>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <h1 data-i18n="title">Anti-Slop Text</h1>
+      <p class="sub" data-i18n="sub">Paste a draft. Marks show spots where the wording may say little. It is a pointer, not a verdict, and it says nothing about who wrote the text.</p>
+    </div>
+    <div class="lang" role="group" aria-label="Language">
+      <button type="button" data-lang="en" aria-pressed="true">EN</button>
+      <button type="button" data-lang="id" aria-pressed="false">ID</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="work">
+      <div class="pane">
+        <div class="pane-head">
+          <label for="draft" data-i18n="draft_label">Your draft</label>
+          <div class="actions">
+            <button type="button" class="btn" id="btn-sample" data-i18n="btn_sample">Load sample</button>
+            <button type="button" class="btn" id="btn-clear" data-i18n="btn_clear">Clear</button>
+          </div>
+        </div>
+        <textarea id="draft" class="doc" spellcheck="false" data-i18n-ph="ph" placeholder="Paste or type text here"></textarea>
+      </div>
+
+      <div class="pane">
+        <div class="pane-head">
+          <h2 data-i18n="marked_label">Marked</h2>
+        </div>
+        <div id="marked" class="doc" aria-live="polite"></div>
+        <ul class="legend">
+          <li><span class="mk k-phrase" data-i18n="lg_phrase">Stock phrase</span></li>
+          <li><span class="mk k-contrast" data-i18n="lg_contrast">Contrast framing</span></li>
+          <li><span class="mk k-ph" data-i18n="lg_ph">Placeholder or meta text</span></li>
+          <li><span class="mk k-conn" data-i18n="lg_conn">Connector opener</span></li>
+          <li><span class="mk k-close" data-i18n="lg_close">Closing heading</span></li>
+        </ul>
+      </div>
+    </section>
+
+    <section id="results" class="results" hidden>
+      <div class="card">
+        <h2 data-i18n="h_numbers">Numbers</h2>
+        <dl class="stats" id="stats"></dl>
+      </div>
+      <div class="card">
+        <h2 data-i18n="h_signals">Worth a closer read</h2>
+        <ul class="signals" id="signals"></ul>
+      </div>
+      <div class="card">
+        <h2 data-i18n="h_found">What was found</h2>
+        <div class="found" id="found"></div>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn main" id="btn-copy" data-i18n="btn_copy">Copy report (JSON)</button>
+      </div>
+      <p class="reminder" data-i18n="reminder">These numbers say nothing about who wrote the text. Clusters of hits in text that also says little are the signal, a single hit is not.</p>
+    </section>
+    <p id="status" class="sr" role="status"></p>
+  </main>
+
+  <footer>
+    <span data-i18n="foot_privacy">Runs in your browser. Nothing is uploaded.</span>
+    &middot;
+    <a href="https://github.com/lausiapempruy/anti-slop-text" data-i18n="foot_repo">Source and Claude skill on GitHub</a>
+    &middot; MIT
+  </footer>
+</div>
+
+<script src="scanner.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  var Scanner = window.SlopScanner;
+
+  var SAMPLE = [
+    "In today's fast-paced digital landscape, it is important to note that effective communication plays a crucial role in the success of any organization. Our platform is a game-changer that seamlessly leverages cutting-edge technology to unlock the full potential of your team. It is not just a tool, it is a comprehensive solution that empowers you to navigate the complexities of modern work.",
+    "",
+    "Moreover, our robust and intuitive features showcase our unwavering commitment to excellence. Furthermore, experts agree that teams using solutions like ours see significant improvements. Studies show that this approach is pivotal for long-term growth. Additionally, our multifaceted approach ensures that every stakeholder benefits from a rich tapestry of capabilities.",
+    "",
+    "Di era digital seperti sekarang, penting untuk dipahami bahwa komunitas yang kuat adalah kunci keberhasilan. Event kami bukan hanya sekadar acara biasa, tetapi sebuah tonggak penting yang menandai babak baru bagi seluruh anggota. Selain itu, kami menghadirkan berbagai fitur inovatif yang komprehensif dan revolusioner untuk memfasilitasi pengalaman tanpa batas.",
+    "",
+    "Lebih lanjut, tidak dapat dimungkiri bahwa para ahli sepakat bahwa langkah ini sangat krusial. Berbagai penelitian membuktikan bahwa pendekatan holistik kami memberikan hasil yang signifikan. Oleh karena itu, kami mengajak seluruh anggota untuk memanfaatkan kesempatan emas ini.",
+    "",
+    "## Key Features",
+    "",
+    "- **Seamless integration** with your existing workflow",
+    "- **Robust security** you can trust",
+    "- **Unparalleled support** whenever you need it",
+    "",
+    "## Conclusion",
+    "",
+    "In conclusion, our platform is a testament to what is possible when innovation meets dedication. Overall, we are excited about the bright future ahead. Ultimately, the journey has only just begun.",
+    "",
+    "[Insert your company name here] looks forward to working with you.",
+    ""
+  ].join("\n");
+
+  var I18N = {
+    en: {
+      skip: 'Skip to draft',
+      title: 'Anti-Slop Text',
+      sub: 'Paste a draft. Marks show spots where the wording may say little. It is a pointer, not a verdict, and it says nothing about who wrote the text.',
+      draft_label: 'Your draft',
+      marked_label: 'Marked',
+      ph: 'Paste or type text here',
+      btn_sample: 'Load sample',
+      btn_clear: 'Clear',
+      btn_copy: 'Copy report (JSON)',
+      copied: 'Report copied.',
+      copy_fail: 'Could not copy. Select the text and copy it by hand.',
+      empty: 'Marks appear here once you add text.',
+      lg_phrase: 'Stock phrase',
+      lg_contrast: 'Contrast framing',
+      lg_ph: 'Placeholder or meta text',
+      lg_conn: 'Connector opener',
+      lg_close: 'Closing heading',
+      tip_phrase: 'Stock phrase. Keep it only if it carries meaning here.',
+      tip_contrast: 'Contrast framing ("not just X but Y"). Check whether it repeats as a template.',
+      tip_ph: 'Leftover placeholder or meta text. Remove it.',
+      tip_conn: 'Sentence opens with a stock connector. Check the logical link is real.',
+      tip_close: 'Closing heading. Check it adds more than a recap.',
+      h_numbers: 'Numbers',
+      h_signals: 'Worth a closer read',
+      h_found: 'What was found',
+      h_phrases: 'Stock phrases',
+      h_contrast: 'Contrast framing',
+      h_ph: 'Placeholders and meta text',
+      h_close: 'Closing headings',
+      none_found: 'Nothing found.',
+      no_signals: 'No strong signals. Read the text for substance anyway; the scanner cannot judge that.',
+      reminder: 'These numbers say nothing about who wrote the text. Clusters of hits in text that also says little are the signal, a single hit is not.',
+      m_words: 'Words',
+      m_sent: 'Sentences',
+      m_phr: 'Stock phrases per 1000 words',
+      m_em: 'Em dashes per 1000 words',
+      m_bold: 'Bold per 1000 words',
+      m_head: 'Headings per 1000 words',
+      m_bul: 'Bullet lines',
+      m_var: 'Sentence length variation',
+      m_con: 'Contrast framing',
+      m_tr: 'Connector openers',
+      sig_short: 'The text is short (under 120 words), so the density numbers are unreliable. Read it directly.',
+      sig_placeholder: 'Leftover placeholders or meta text found. Remove them.',
+      sig_phrases_high: 'Many stock phrases and inflated words for the length. Check which ones say nothing.',
+      sig_phrases_some: 'Several stock phrases. Check whether each one carries meaning.',
+      sig_contrast: 'Contrast framing ("not just X but Y") shows up more than once. Check for a repeated template.',
+      sig_emdash: 'Many em dashes. Fine if purposeful; edit only the ones a comma or period would replace.',
+      sig_bold: 'Heavy bold use. If nearly everything is bold, nothing stands out.',
+      sig_headings: 'Dense headings. Check whether the text reads as a stack of cards.',
+      sig_bullets: 'Mostly bullet lines. Fine for lists; check whether flowing explanation was chopped up.',
+      sig_emoji: 'Emoji on most headings. Check this fits the document\'s register.',
+      sig_closing: 'A closing heading ("Conclusion" or similar). Check it adds more than a recap.',
+      sig_connectors: 'Many sentences open with stock connectors. Check the logical links are real.',
+      sig_uniform: 'Sentence lengths are very uniform. Check for a monotone rhythm.',
+      sig_markdown: 'Markdown syntax present. Confirm where this will be pasted renders markdown.',
+      foot_privacy: 'Runs in your browser. Nothing is uploaded.',
+      foot_repo: 'Source and Claude skill on GitHub'
+    },
+    id: {
+      skip: 'Lompat ke draf',
+      title: 'Anti-Slop Text',
+      sub: 'Tempel drafmu. Tanda menunjukkan bagian yang kata-katanya mungkin kosong. Ini penunjuk, bukan vonis, dan tidak menilai siapa yang menulis teks.',
+      draft_label: 'Drafmu',
+      marked_label: 'Hasil tanda',
+      ph: 'Tempel atau ketik teks di sini',
+      btn_sample: 'Pakai contoh',
+      btn_clear: 'Kosongkan',
+      btn_copy: 'Salin laporan (JSON)',
+      copied: 'Laporan tersalin.',
+      copy_fail: 'Gagal menyalin. Blok teksnya lalu salin manual.',
+      empty: 'Tanda muncul di sini setelah kamu menambahkan teks.',
+      lg_phrase: 'Frasa pasaran',
+      lg_contrast: 'Pola kontras',
+      lg_ph: 'Placeholder atau teks sisa',
+      lg_conn: 'Kata sambung pembuka',
+      lg_close: 'Judul penutup',
+      tip_phrase: 'Frasa pasaran. Pertahankan hanya kalau di sini benar-benar bermakna.',
+      tip_contrast: 'Pola kontras ("bukan hanya X, tetapi Y"). Cek apakah berulang seperti cetakan.',
+      tip_ph: 'Placeholder atau teks sisa. Hapus.',
+      tip_conn: 'Kalimat dibuka kata sambung pasaran. Cek apakah hubungan logikanya nyata.',
+      tip_close: 'Judul penutup. Cek apakah isinya lebih dari ringkasan ulang.',
+      h_numbers: 'Angka',
+      h_signals: 'Layak dibaca ulang',
+      h_found: 'Yang ditemukan',
+      h_phrases: 'Frasa pasaran',
+      h_contrast: 'Pola kontras',
+      h_ph: 'Placeholder dan teks sisa',
+      h_close: 'Judul penutup',
+      none_found: 'Tidak ada.',
+      no_signals: 'Tidak ada sinyal kuat. Tetap baca isinya; pemindai tidak bisa menilai itu.',
+      reminder: 'Angka ini tidak menunjukkan siapa yang menulis teks. Yang jadi sinyal adalah kumpulan temuan di teks yang juga miskin isi, bukan satu temuan saja.',
+      m_words: 'Kata',
+      m_sent: 'Kalimat',
+      m_phr: 'Frasa pasaran per 1000 kata',
+      m_em: 'Em dash per 1000 kata',
+      m_bold: 'Tebal per 1000 kata',
+      m_head: 'Judul per 1000 kata',
+      m_bul: 'Baris butir',
+      m_var: 'Variasi panjang kalimat',
+      m_con: 'Pola kontras',
+      m_tr: 'Kata sambung pembuka',
+      sig_short: 'Teksnya pendek (di bawah 120 kata), jadi angka kepadatan kurang bisa dipercaya. Baca langsung saja.',
+      sig_placeholder: 'Ada placeholder atau teks sisa. Hapus.',
+      sig_phrases_high: 'Frasa pasaran dan kata muluk cukup banyak untuk panjang teks ini. Cek mana yang tidak bermakna.',
+      sig_phrases_some: 'Ada beberapa frasa pasaran. Cek apakah masing-masing bermakna.',
+      sig_contrast: 'Pola kontras ("bukan hanya X, tetapi Y") muncul lebih dari sekali. Cek apakah jadi cetakan yang berulang.',
+      sig_emdash: 'Banyak em dash. Tidak masalah kalau disengaja; ubah hanya yang cukup diganti koma atau titik.',
+      sig_bold: 'Terlalu banyak huruf tebal. Kalau hampir semua tebal, tidak ada yang menonjol.',
+      sig_headings: 'Judul terlalu rapat. Cek apakah teks terbaca seperti tumpukan kartu.',
+      sig_bullets: 'Kebanyakan baris butir. Wajar untuk daftar; cek apakah penjelasan yang mengalir jadi terpotong.',
+      sig_emoji: 'Emoji di sebagian besar judul. Cek apakah cocok dengan gaya dokumen.',
+      sig_closing: 'Ada judul penutup ("Kesimpulan" atau sejenisnya). Cek apakah isinya lebih dari ringkasan ulang.',
+      sig_connectors: 'Banyak kalimat dibuka kata sambung pasaran. Cek apakah hubungan logikanya nyata.',
+      sig_uniform: 'Panjang kalimat sangat seragam. Cek apakah ritmenya monoton.',
+      sig_markdown: 'Ada sintaks markdown. Pastikan tempat menempelkannya menampilkan markdown.',
+      foot_privacy: 'Berjalan di browsermu. Tidak ada yang diunggah.',
+      foot_repo: 'Kode dan skill Claude di GitHub'
+    }
+  };
+
+  var lang = 'en';
+  try {
+    var saved = window.localStorage.getItem('asl-lang');
+    if (saved === 'id' || saved === 'en') {
+      lang = saved;
+    } else if ((navigator.language || '').slice(0, 2) === 'id') {
+      lang = 'id';
+    }
+  } catch (e) { /* storage blocked: keep the default */ }
+
+  var draft = document.getElementById('draft');
+  var marked = document.getElementById('marked');
+  var results = document.getElementById('results');
+  var statsEl = document.getElementById('stats');
+  var signalsEl = document.getElementById('signals');
+  var foundEl = document.getElementById('found');
+  var statusEl = document.getElementById('status');
+  var lastResult = null;
+  var timer = null;
+
+  function t(key) {
+    return I18N[lang][key] || I18N.en[key] || key;
+  }
+
+  function esc(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function renderMarked(raw, ranges) {
+    var html = '', pos = 0, i, r;
+    for (i = 0; i < ranges.length; i++) {
+      r = ranges[i];
+      html += esc(raw.slice(pos, r.s));
+      html += '<mark class="mk k-' + r.kind + '" title="' + esc(t('tip_' + r.kind)) + '">' +
+        esc(raw.slice(r.s, r.e)) + '</mark>';
+      pos = r.e;
+    }
+    return html + esc(raw.slice(pos));
+  }
+
+  function listBlock(titleKey, items, fmt) {
+    var html = '<div><h3>' + esc(t(titleKey)) + '</h3>', i;
+    if (!items.length) {
+      return html + '<p class="none">' + esc(t('none_found')) + '</p></div>';
+    }
+    html += '<ul>';
+    for (i = 0; i < items.length; i++) {
+      html += '<li>' + fmt(items[i]) + '</li>';
+    }
+    return html + '</ul></div>';
+  }
+
+  function renderResults(res) {
+    var m = res.metrics, i, html;
+    var cards = [
+      ['m_words', m.words],
+      ['m_sent', m.sentences],
+      ['m_phr', m.phrase_hits_per_1000_words],
+      ['m_em', m.em_dashes_per_1000_words],
+      ['m_bold', m.bold_per_1000_words],
+      ['m_head', m.headings_per_1000_words],
+      ['m_bul', Math.round(m.bullet_share_of_lines * 100) + '%'],
+      ['m_var', m.sentence_length_variation],
+      ['m_con', m.contrast_framing],
+      ['m_tr', m.transition_openers]
+    ];
+    html = '';
+    for (i = 0; i < cards.length; i++) {
+      html += '<div class="stat"><dt>' + esc(t(cards[i][0])) + '</dt><dd>' + esc(cards[i][1]) + '</dd></div>';
+    }
+    statsEl.innerHTML = html;
+
+    if (res.signalKeys.length) {
+      html = '';
+      for (i = 0; i < res.signalKeys.length; i++) {
+        html += '<li>' + esc(t('sig_' + res.signalKeys[i])) + '</li>';
+      }
+      signalsEl.innerHTML = html;
+    } else {
+      signalsEl.innerHTML = '<li>' + esc(t('no_signals')) + '</li>';
+    }
+
+    foundEl.innerHTML =
+      listBlock('h_phrases', res.phraseList.slice(0, 30), function (p) {
+        return esc(p[0]) + '<b>x' + p[1] + '</b>';
+      }) +
+      listBlock('h_contrast', res.contrastExamples, esc) +
+      listBlock('h_ph', res.placeholders, esc) +
+      listBlock('h_close', res.closingHeadings, esc);
+  }
+
+  function render() {
+    var raw = draft.value, res;
+    if (!raw.replace(/\s+/g, '')) {
+      marked.innerHTML = '<p class="hint">' + esc(t('empty')) + '</p>';
+      results.hidden = true;
+      lastResult = null;
+      return;
+    }
+    res = Scanner.analyze(raw);
+    lastResult = res;
+    marked.innerHTML = renderMarked(raw, res.ranges);
+    renderResults(res);
+    results.hidden = false;
+  }
+
+  function applyLang() {
+    var nodes = document.querySelectorAll('[data-i18n]'), i, btns;
+    document.documentElement.lang = lang;
+    for (i = 0; i < nodes.length; i++) {
+      nodes[i].textContent = t(nodes[i].getAttribute('data-i18n'));
+    }
+    nodes = document.querySelectorAll('[data-i18n-ph]');
+    for (i = 0; i < nodes.length; i++) {
+      nodes[i].setAttribute('placeholder', t(nodes[i].getAttribute('data-i18n-ph')));
+    }
+    btns = document.querySelectorAll('[data-lang]');
+    for (i = 0; i < btns.length; i++) {
+      btns[i].setAttribute('aria-pressed', btns[i].getAttribute('data-lang') === lang ? 'true' : 'false');
+    }
+    render();
+  }
+
+  function say(msg) {
+    statusEl.textContent = '';
+    window.setTimeout(function () { statusEl.textContent = msg; }, 30);
+  }
+
+  function reportJson(res) {
+    var phraseHits = {}, sigs = [], i;
+    for (i = 0; i < res.phraseList.length; i++) {
+      phraseHits[res.phraseList[i][0]] = res.phraseList[i][1];
+    }
+    for (i = 0; i < res.signalKeys.length; i++) {
+      sigs.push(Scanner.signalsEn[res.signalKeys[i]]);
+    }
+    return JSON.stringify({
+      metrics: res.metrics,
+      signals: sigs,
+      phrase_hits: phraseHits,
+      transition_hits: res.transitionHits,
+      contrast_examples: res.contrastExamples,
+      placeholders: res.placeholders,
+      closing_headings: res.closingHeadings,
+      emoji_headings: res.emojiHeadings
+    }, null, 2);
+  }
+
+  function copyFallback(text) {
+    var ta = document.createElement('textarea'), ok = false;
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.top = '-1000px';
+    document.body.appendChild(ta);
+    ta.select();
+    try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+    document.body.removeChild(ta);
+    say(ok ? t('copied') : t('copy_fail'));
+  }
+
+  function copyReport() {
+    var text;
+    if (!lastResult) { return; }
+    text = reportJson(lastResult);
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        say(t('copied'));
+      }, function () {
+        copyFallback(text);
+      });
+    } else {
+      copyFallback(text);
+    }
+  }
+
+  draft.addEventListener('input', function () {
+    window.clearTimeout(timer);
+    timer = window.setTimeout(render, 120);
+  });
+
+  document.getElementById('btn-sample').addEventListener('click', function () {
+    draft.value = SAMPLE;
+    render();
+    draft.focus();
+  });
+
+  document.getElementById('btn-clear').addEventListener('click', function () {
+    draft.value = '';
+    render();
+    draft.focus();
+  });
+
+  document.getElementById('btn-copy').addEventListener('click', copyReport);
+
+  (function bindLang() {
+    var btns = document.querySelectorAll('[data-lang]'), i;
+    function pick(e) {
+      lang = e.currentTarget.getAttribute('data-lang');
+      try { window.localStorage.setItem('asl-lang', lang); } catch (err) { /* ignore */ }
+      applyLang();
+    }
+    for (i = 0; i < btns.length; i++) {
+      btns[i].addEventListener('click', pick);
+    }
+  }());
+
+  applyLang();
+}());
+</script>
+</body>
+</html>

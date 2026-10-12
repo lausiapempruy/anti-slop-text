@@ -7,10 +7,20 @@ A Claude skill that makes written text specific, useful and human-edited instead
 
 The skill treats slop as a quality problem, not an authorship verdict. It never claims a text "was written by AI" and it does not try to beat AI detectors. It judges substance, specificity and usefulness, in that order: facts first, then wording, then structure, then formatting.
 
+## Two ways to use it
+
+1. **The Claude skill.** Claude writes and audits with the principles applied. See [Install](#install).
+2. **The web scanner.** Open `index.html` (or the GitHub Pages site) and paste a draft. Matching spans are marked in place, with the numbers and a short list of what to read twice. It runs in your browser, nothing is uploaded, and the page works in Indonesian and English.
+
+The web scanner is a port of `scan_text.py` with the same phrase lists and thresholds. `test/parity.js` checks that both give identical numbers on the same text.
+
 ## What is in the box
 
 ```
-anti-ai-slop-text/
+index.html                        # web scanner: paste text, see marked spans
+scanner.js                        # scanner engine, browser and Node, no dependencies
+test/parity.js                    # checks scanner.js against scan_text.py
+anti-ai-slop-text/                # the Claude skill (upload this folder)
 ├── SKILL.md                      # entry point: modes, writing principles, audit workflow
 ├── references/
 │   ├── patterns.md               # catalog of slop patterns (ID + EN) with fixes
@@ -21,6 +31,16 @@ anti-ai-slop-text/
 examples/
 └── sample-slop.txt               # deliberately bad text to try the scanner on
 ```
+
+## Run the web scanner
+
+No build step. Either open `index.html` directly, or serve the folder:
+
+```bash
+python3 -m http.server 8000   # then open http://localhost:8000
+```
+
+To publish it, enable GitHub Pages for this repo: Settings, Pages, Source "Deploy from a branch", branch `main`, folder `/ (root)`.
 
 ## Install
 
