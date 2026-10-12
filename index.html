@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Anti-Slop Text</title>
 <meta name="description" content="Paste a draft and see which phrases, templates and leftovers say little. Runs in your browser. Indonesian and English.">
-<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231d1a16'/%3E%3Crect x='9' y='17' width='46' height='14' rx='3' fill='%23f2c94c'/%3E%3Cpath d='M12 45h40M12 54h24' stroke='%23faf7f0' stroke-width='5' stroke-linecap='round'/%3E%3Cpath d='M8 36c10-9 20 4 32-5s10-3 16-9' stroke='%23e0533a' stroke-width='4.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E">
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Crect%20width='64'%20height='64'%20rx='14'%20fill='%231d1a16'/%3E%3Crect%20x='9'%20y='14'%20width='46'%20height='15'%20rx='3.5'%20fill='%23f2c94c'/%3E%3Cpath%20d='M12%2045h40M12%2054h26'%20stroke='%23faf7f0'%20stroke-width='5'%20stroke-linecap='round'%20fill='none'/%3E%3Cpath%20d='M5%2021.5h54'%20stroke='%23e0533a'%20stroke-width='4'%20stroke-linecap='round'%20fill='none'/%3E%3C/svg%3E">
 <style>
 :root {
   --bg: #f1ece0;
@@ -208,15 +208,87 @@ div.doc { padding: 12px; border: 1px solid transparent; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 footer { padding: 28px 0 40px; color: var(--muted); font-size: 0.88rem; }
 footer a { color: var(--ink); }
+:root {
+  --g-low: #3f8f4c;
+  --g-mid: #d9a21b;
+  --g-high: #d4604a;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --g-low: #5fb36b;
+    --g-mid: #e3b83a;
+    --g-high: #ef7e65;
+  }
+}
+.brand { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+.brand h1 { margin: 0; }
+.logo { flex: none; width: 44px; height: 44px; border-radius: 10px; }
+.ico {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.i-phrase { color: #b07d00; }
+.i-contrast { color: #d4452d; }
+.i-ph { color: #3b82c4; }
+.i-conn { color: var(--muted); }
+.i-close { color: #3f9a52; }
+@media (prefers-color-scheme: dark) {
+  .i-phrase { color: #e3b83a; }
+  .i-contrast { color: #ef7e65; }
+  .i-ph { color: #7db4f5; }
+  .i-close { color: #6fc27c; }
+}
+.legend li { display: flex; align-items: center; gap: 6px; }
+.found h3 { display: flex; align-items: center; gap: 6px; }
+.meter-wrap { display: grid; gap: 12px 28px; grid-template-columns: 1fr; align-items: center; }
+@media (min-width: 640px) { .meter-wrap { grid-template-columns: minmax(240px, 340px) 1fr; } }
+#gauge { width: 100%; height: auto; display: block; }
+.arc { fill: none; stroke-width: 20; }
+.zone-lbl { font: 600 11px var(--sans); fill: var(--muted); text-anchor: middle; }
+.gauge-end { font: 11px var(--mono); fill: var(--muted); }
+.needle { transform-origin: 150px 150px; transition: transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1); }
+.needle line { stroke: var(--ink); stroke-width: 4; stroke-linecap: round; }
+.needle circle { fill: var(--ink); }
+@media (prefers-reduced-motion: reduce) { .needle { transition: none; } }
+.score { margin: 0; font: 700 2.8rem/1 var(--mono); }
+.score small { font-size: 1rem; color: var(--muted); font-weight: 500; }
+.level { margin: 6px 0 10px; font: 700 1.1rem var(--sans); }
+.meter-read .note { margin: 0 0 6px; color: var(--muted); font-size: 0.92rem; }
+.meter-read details { color: var(--muted); font-size: 0.9rem; }
+.meter-read summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; }
+.meter-read summary::before { content: "+"; font-family: var(--mono); font-weight: 700; width: 1.4ch; margin-right: 6px; }
+.meter-read details[open] summary::before { content: "\2212"; }
+.meter-read details p { margin: 0 0 8px; }
 [hidden] { display: none !important; }
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <symbol id="logo" viewBox="0 0 64 64">
+      <rect width="64" height="64" rx="14" fill="#1d1a16"/>
+      <rect x="9" y="14" width="46" height="15" rx="3.5" fill="#f2c94c"/>
+      <path d="M12 45h40M12 54h26" stroke="#faf7f0" stroke-width="5" stroke-linecap="round" fill="none"/>
+      <path d="M5 21.5h54" stroke="#e0533a" stroke-width="4" stroke-linecap="round" fill="none"/>
+    </symbol>
+    <symbol id="i-phrase" viewBox="0 0 24 24"><path d="M15 4.5l4.5 4.5L9 19.5H4.5V15z"/><path d="M13 6.5l4.5 4.5"/><path d="M4 22h16"/></symbol>
+    <symbol id="i-contrast" viewBox="0 0 24 24"><path d="M5 9h14M5 15h14M15.5 4L8.5 20"/></symbol>
+    <symbol id="i-ph" viewBox="0 0 24 24"><path d="M8.5 4H5v16h3.5M15.5 4H19v16h-3.5"/><circle cx="9.5" cy="12" r="1.1" fill="currentColor" stroke="none"/><circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none"/><circle cx="14.5" cy="12" r="1.1" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-conn" viewBox="0 0 24 24"><path d="M4 12h14M13 6.5L18.5 12 13 17.5"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="M6 21V4M6 5h12l-2.5 4 2.5 4H6"/></symbol>
+  </defs>
+</svg>
 <a class="skip" href="#draft" data-i18n="skip">Skip to draft</a>
 <div class="wrap">
   <header class="top">
     <div>
-      <h1 data-i18n="title">Anti-Slop Text</h1>
+      <div class="brand"><svg class="logo" aria-hidden="true"><use href="#logo"/></svg><h1 data-i18n="title">Anti-Slop Text</h1></div>
       <p class="sub" data-i18n="sub">Paste a draft. Marks show spots where the wording may say little. It is a pointer, not a verdict, and it says nothing about who wrote the text.</p>
     </div>
     <div class="lang" role="group" aria-label="Language">
@@ -244,16 +316,38 @@ footer a { color: var(--ink); }
         </div>
         <div id="marked" class="doc" aria-live="polite"></div>
         <ul class="legend">
-          <li><span class="mk k-phrase" data-i18n="lg_phrase">Stock phrase</span></li>
-          <li><span class="mk k-contrast" data-i18n="lg_contrast">Contrast framing</span></li>
-          <li><span class="mk k-ph" data-i18n="lg_ph">Placeholder or meta text</span></li>
-          <li><span class="mk k-conn" data-i18n="lg_conn">Connector opener</span></li>
-          <li><span class="mk k-close" data-i18n="lg_close">Closing heading</span></li>
+          <li><svg class="ico i-phrase" aria-hidden="true"><use href="#i-phrase"/></svg><span class="mk k-phrase" data-i18n="lg_phrase">Stock phrase</span></li>
+          <li><svg class="ico i-contrast" aria-hidden="true"><use href="#i-contrast"/></svg><span class="mk k-contrast" data-i18n="lg_contrast">Contrast framing</span></li>
+          <li><svg class="ico i-ph" aria-hidden="true"><use href="#i-ph"/></svg><span class="mk k-ph" data-i18n="lg_ph">Placeholder or meta text</span></li>
+          <li><svg class="ico i-conn" aria-hidden="true"><use href="#i-conn"/></svg><span class="mk k-conn" data-i18n="lg_conn">Connector opener</span></li>
+          <li><svg class="ico i-close" aria-hidden="true"><use href="#i-close"/></svg><span class="mk k-close" data-i18n="lg_close">Closing heading</span></li>
         </ul>
       </div>
     </section>
 
     <section id="results" class="results" hidden>
+      <div class="card">
+        <h2 data-i18n="h_meter">Slop meter</h2>
+        <div class="meter-wrap">
+          <svg id="gauge" viewBox="0 0 300 172" role="img" aria-labelledby="gauge-title">
+            <title id="gauge-title">Slop meter</title>
+            <g id="arcs"></g>
+            <g id="zones"></g>
+            <g class="needle" id="needle"><line x1="150" y1="150" x2="150" y2="64"/><circle cx="150" cy="150" r="9"/></g>
+            <text class="gauge-end" x="40" y="169" text-anchor="middle">0</text>
+            <text class="gauge-end" x="260" y="169" text-anchor="middle">100</text>
+          </svg>
+          <div class="meter-read">
+            <p class="score"><span id="meter-score">0</span><small>/100</small></p>
+            <p class="level" id="meter-level"></p>
+            <p class="note" data-i18n="meter_note">A quick signal level built from the numbers below. It is not the chance that an AI wrote the text.</p>
+            <details>
+              <summary data-i18n="meter_how_h">How it is counted</summary>
+              <p data-i18n="meter_how">Stock phrase density adds up to 60 points, contrast framing up to 20, leftover placeholders 15, a closing heading 5 and connector openers up to 12. Under 25 is low, under 55 is medium, the rest is high. A text that lists slop on purpose, like a pattern catalog, scores high too.</p>
+            </details>
+          </div>
+        </div>
+      </div>
       <div class="card">
         <h2 data-i18n="h_numbers">Numbers</h2>
         <dl class="stats" id="stats"></dl>
@@ -339,6 +433,15 @@ footer a { color: var(--ink); }
       h_numbers: 'Numbers',
       h_signals: 'Worth a closer read',
       h_found: 'What was found',
+      h_meter: 'Slop meter',
+      h_conn: 'Connector openers',
+      lv_low: 'Low',
+      lv_medium: 'Medium',
+      lv_high: 'High',
+      meter_note: 'A quick signal level built from the numbers below. It is not the chance that an AI wrote the text.',
+      meter_short: 'short text, rough',
+      meter_how_h: 'How it is counted',
+      meter_how: 'Stock phrase density adds up to 60 points, contrast framing up to 20, leftover placeholders 15, a closing heading 5 and connector openers up to 12. Under 25 is low, under 55 is medium, the rest is high. A text that lists slop on purpose, like a pattern catalog, scores high too.',
       h_phrases: 'Stock phrases',
       h_contrast: 'Contrast framing',
       h_ph: 'Placeholders and meta text',
@@ -399,6 +502,15 @@ footer a { color: var(--ink); }
       h_numbers: 'Angka',
       h_signals: 'Layak dibaca ulang',
       h_found: 'Yang ditemukan',
+      h_meter: 'Meter slop',
+      h_conn: 'Kata sambung pembuka',
+      lv_low: 'Rendah',
+      lv_medium: 'Sedang',
+      lv_high: 'Tinggi',
+      meter_note: 'Tingkat sinyal cepat dari angka di bawah. Ini bukan peluang teks ditulis AI.',
+      meter_short: 'teks pendek, kasar',
+      meter_how_h: 'Cara menghitung',
+      meter_how: 'Kepadatan frasa pasaran menyumbang sampai 60 poin, pola kontras sampai 20, placeholder sisa 15, judul penutup 5, dan kata sambung pembuka sampai 12. Di bawah 25 rendah, di bawah 55 sedang, sisanya tinggi. Teks yang sengaja memuat contoh slop, seperti katalog pola, juga akan tinggi.',
       h_phrases: 'Frasa pasaran',
       h_contrast: 'Pola kontras',
       h_ph: 'Placeholder dan teks sisa',
@@ -452,6 +564,10 @@ footer a { color: var(--ink); }
   var signalsEl = document.getElementById('signals');
   var foundEl = document.getElementById('found');
   var statusEl = document.getElementById('status');
+  var gaugeEl = document.getElementById('gauge');
+  var gaugeTitle = document.getElementById('gauge-title');
+  var needleEl = document.getElementById('needle');
+  var zoneLabels = [];
   var lastResult = null;
   var timer = null;
 
@@ -479,8 +595,9 @@ footer a { color: var(--ink); }
     return html + esc(raw.slice(pos));
   }
 
-  function listBlock(titleKey, items, fmt) {
-    var html = '<div><h3>' + esc(t(titleKey)) + '</h3>', i;
+  function listBlock(titleKey, icon, items, fmt) {
+    var html = '<div><h3><svg class="ico i-' + icon + '" aria-hidden="true"><use href="#i-' + icon + '"/></svg>' +
+      esc(t(titleKey)) + '</h3>', i;
     if (!items.length) {
       return html + '<p class="none">' + esc(t('none_found')) + '</p></div>';
     }
@@ -521,13 +638,78 @@ footer a { color: var(--ink); }
       signalsEl.innerHTML = '<li>' + esc(t('no_signals')) + '</li>';
     }
 
+    var connItems = [], ck;
+    for (ck in res.transitionHits) {
+      if (Object.prototype.hasOwnProperty.call(res.transitionHits, ck)) {
+        connItems.push([ck, res.transitionHits[ck]]);
+      }
+    }
+    function withCount(p) {
+      return esc(p[0]) + '<b>x' + p[1] + '</b>';
+    }
     foundEl.innerHTML =
-      listBlock('h_phrases', res.phraseList.slice(0, 30), function (p) {
-        return esc(p[0]) + '<b>x' + p[1] + '</b>';
-      }) +
-      listBlock('h_contrast', res.contrastExamples, esc) +
-      listBlock('h_ph', res.placeholders, esc) +
-      listBlock('h_close', res.closingHeadings, esc);
+      listBlock('h_phrases', 'phrase', res.phraseList.slice(0, 30), withCount) +
+      listBlock('h_contrast', 'contrast', res.contrastExamples, esc) +
+      listBlock('h_ph', 'ph', res.placeholders, esc) +
+      listBlock('h_conn', 'conn', connItems, withCount) +
+      listBlock('h_close', 'close', res.closingHeadings, esc);
+  }
+
+  /* ---- slop meter gauge: a half circle, 0 at the left end, 100 at the right end ---- */
+  var SVGNS = 'http://www.w3.org/2000/svg';
+  var ZONES = [
+    { key: 'low', from: 0, to: 25, color: 'var(--g-low)' },
+    { key: 'medium', from: 25, to: 55, color: 'var(--g-mid)' },
+    { key: 'high', from: 55, to: 100, color: 'var(--g-high)' }
+  ];
+
+  function gaugePoint(score, r) {
+    var a = (180 - score * 1.8) * Math.PI / 180;
+    return { x: 150 + r * Math.cos(a), y: 150 - r * Math.sin(a) };
+  }
+
+  function arcPath(from, to, r) {
+    var p0 = gaugePoint(from + 0.8, r), p1 = gaugePoint(to - 0.8, r);
+    return 'M' + p0.x.toFixed(2) + ' ' + p0.y.toFixed(2) +
+      ' A ' + r + ' ' + r + ' 0 0 1 ' + p1.x.toFixed(2) + ' ' + p1.y.toFixed(2);
+  }
+
+  function buildGauge() {
+    var arcs = document.getElementById('arcs'), zones = document.getElementById('zones');
+    var i, z, path, label, p;
+    for (i = 0; i < ZONES.length; i++) {
+      z = ZONES[i];
+      path = document.createElementNS(SVGNS, 'path');
+      path.setAttribute('class', 'arc');
+      path.setAttribute('d', arcPath(z.from, z.to, 110));
+      path.setAttribute('stroke', z.color);
+      arcs.appendChild(path);
+      p = gaugePoint((z.from + z.to) / 2, 136);
+      label = document.createElementNS(SVGNS, 'text');
+      label.setAttribute('class', 'zone-lbl');
+      label.setAttribute('x', p.x.toFixed(1));
+      label.setAttribute('y', (p.y + 4).toFixed(1));
+      zones.appendChild(label);
+      zoneLabels.push({ key: z.key, el: label });
+    }
+    needleEl.style.transform = 'rotate(-90deg)';
+    updateZoneLabels();
+  }
+
+  function updateZoneLabels() {
+    var i;
+    for (i = 0; i < zoneLabels.length; i++) {
+      zoneLabels[i].el.textContent = t('lv_' + zoneLabels[i].key);
+    }
+  }
+
+  function renderMeter(res) {
+    var mt = Scanner.meter(res), lvl = t('lv_' + mt.level);
+    document.getElementById('meter-score').textContent = mt.score;
+    document.getElementById('meter-level').textContent = lvl + (mt.short ? ' \u00b7 ' + t('meter_short') : '');
+    gaugeTitle.textContent = t('h_meter') + ': ' + mt.score + '/100, ' + lvl;
+    void gaugeEl.getBoundingClientRect();   /* flush styles so the needle animates from where it was */
+    needleEl.style.transform = 'rotate(' + ((mt.score - 50) * 1.8) + 'deg)';
   }
 
   function render() {
@@ -543,6 +725,7 @@ footer a { color: var(--ink); }
     marked.innerHTML = renderMarked(raw, res.ranges);
     renderResults(res);
     results.hidden = false;
+    renderMeter(res);
   }
 
   function applyLang() {
@@ -559,6 +742,7 @@ footer a { color: var(--ink); }
     for (i = 0; i < btns.length; i++) {
       btns[i].setAttribute('aria-pressed', btns[i].getAttribute('data-lang') === lang ? 'true' : 'false');
     }
+    updateZoneLabels();
     render();
   }
 
@@ -577,6 +761,7 @@ footer a { color: var(--ink); }
     }
     return JSON.stringify({
       metrics: res.metrics,
+      meter: Scanner.meter(res),
       signals: sigs,
       phrase_hits: phraseHits,
       transition_hits: res.transitionHits,
@@ -646,6 +831,7 @@ footer a { color: var(--ink); }
     }
   }());
 
+  buildGauge();
   applyLang();
 }());
 </script>

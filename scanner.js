@@ -388,8 +388,36 @@
     return res;
   }
 
+  /*
+   * Slop meter: one 0-100 number built from the scan, for a quick read.
+   * It is an editorial signal level, not the chance that a model wrote the text.
+   *
+   *   stock phrase density   1.2 points per phrase per 1000 words, up to 60
+   *   contrast framing       10 points each, up to 20
+   *   leftover placeholders  15 points if any
+   *   closing heading        5 points if any
+   *   connector openers      3 points each, up to 12
+   *
+   * Under 25 is low, under 55 is medium, the rest is high. Texts under 120 words
+   * are flagged as short, because density numbers are unreliable there.
+   */
+  function meter(res) {
+    var m = res.metrics, s = 0, level;
+    if (m.words) {
+      s += Math.min(60, m.phrase_hits_per_1000_words * 1.2);
+      s += Math.min(20, m.contrast_framing * 10);
+      s += res.placeholders.length ? 15 : 0;
+      s += res.closingHeadings.length ? 5 : 0;
+      s += Math.min(12, m.transition_openers * 3);
+    }
+    s = Math.max(0, Math.min(100, Math.round(s)));
+    level = s < 25 ? 'low' : (s < 55 ? 'medium' : 'high');
+    return { score: s, level: level, short: m.words < 120 };
+  }
+
   return {
     analyze: analyze,
+    meter: meter,
     signalsEn: SIGNALS_EN
   };
 }));

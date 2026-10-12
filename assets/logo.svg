@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="256" height="256" role="img" aria-labelledby="t">
+  <title id="t">anti-slop-text logo: a highlighted line of text struck through</title>
+  <rect width="64" height="64" rx="14" fill="#1d1a16"/>
+  <rect x="9" y="14" width="46" height="15" rx="3.5" fill="#f2c94c"/>
+  <path d="M12 45h40M12 54h26" stroke="#faf7f0" stroke-width="5" stroke-linecap="round" fill="none"/>
+  <path d="M5 21.5h54" stroke="#e0533a" stroke-width="4" stroke-linecap="round" fill="none"/>
+</svg>

@@ -20,9 +20,10 @@ Issues and pull requests are welcome. The most useful kinds:
 ```bash
 python3 anti-ai-slop-text/scripts/scan_text.py examples/sample-slop.txt
 node test/parity.js
+node test/meter.js
 ```
 
-The first should run without errors and flag the placeholder, the closing heading and the contrast framing in the sample. The second must print `ok` for the sample. It needs Node 14 or newer and nothing else.
+The first should run without errors and flag the placeholder, the closing heading and the contrast framing in the sample. The second must print `ok` for the sample. The third pins the slop meter: if you change its weights, update the table in `README.md` and the comment above `meter()` in `scanner.js`. It needs Node 14 or newer and nothing else.
 
 If you add a phrase or change a threshold, change it in both `scan_text.py` and `scanner.js`, then run the parity check on a few real documents:
 
